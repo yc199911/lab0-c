@@ -14,40 +14,113 @@
 /* Create an empty queue */
 struct list_head *q_new()
 {
-    return NULL;
+    struct list_head *head = malloc(sizeof(struct list_head));
+    if (head == NULL)
+        return NULL;
+    INIT_LIST_HEAD(head);
+    return head;
 }
 
 /* Free all storage used by queue */
-void q_free(struct list_head *head) {}
+void q_free(struct list_head *l)
+{
+    if (!l)
+        return;
+    element_t *entry;
+    element_t *safe;
+    list_for_each_entry_safe (entry, safe, l, list) {
+        list_del(&entry->list);
+        free(entry);
+    }
+}
 
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+    element_t *new_node = malloc(sizeof(element_t));
+    if (!new_node)
+        return false;
+    // 分配足夠的記憶體來容納字串 s，包括結尾的空字符 '\0'
+    new_node->value = malloc(strlen(s) + 1);
+    if (!new_node->value) {
+        free(new_node);
+        return false;
+    }
+    // 複製字串 s 的內容到新分配的記憶體中
+    strncpy(new_node->value, s, strlen(s));
+
+    INIT_LIST_HEAD(&new_node->list);
+    list_add(&new_node->list, head);
+
     return true;
 }
+
 
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+    element_t *new_node = malloc(sizeof(element_t));
+    if (!new_node)
+        return false;
+    // 分配足夠的記憶體來容納字串 s，包括結尾的空字符 '\0'
+    new_node->value = malloc(strlen(s) + 1);
+    if (!new_node->value) {
+        free(new_node);
+        return false;
+    }
+    // 複製字串 s 的內容到新分配的記憶體中
+    strncpy(new_node->value, s, strlen(s));
+
+    INIT_LIST_HEAD(&new_node->list);
+    list_add_tail(&new_node->list, head);
+
     return true;
 }
 
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || list_empty(head))
+        return NULL;
+    element_t *node = list_first_entry(head, element_t, list);
+
+    if (sp) {
+        strncpy(sp, node->value, bufsize - 1);
+        sp[bufsize - 1] = 0;
+    }
+    list_del_init(&node->list);
+    return node;
 }
 
 /* Remove an element from tail of queue */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || list_empty(head))
+        return NULL;
+    element_t *node = list_last_entry(head, element_t, list);
+
+    if (sp && bufsize > 0) {
+        strncpy(sp, node->value, bufsize - 1);
+        sp[bufsize - 1] = 0;
+    }
+    list_del_init(&node->list);
+    return node;
 }
 
 /* Return number of elements in queue */
 int q_size(struct list_head *head)
 {
-    return -1;
+    if (!head)
+        return 0;
+    int count = 0;
+    struct list_head *node;
+    list_for_each (node, head)
+        count++;
+    return count;
 }
 
 /* Delete the middle node in queue */
