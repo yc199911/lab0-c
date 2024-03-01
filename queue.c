@@ -28,32 +28,34 @@ void q_free(struct list_head *l)
         return;
     element_t *entry;
     element_t *safe;
+
     list_for_each_entry_safe (entry, safe, l, list) {
         list_del(&entry->list);
-        free(entry);
+        q_release_element(entry);
     }
+    free(l);
 }
 
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
-    if (!head)
+    if (!head || !s)
         return false;
     element_t *new_node = malloc(sizeof(element_t));
     if (!new_node)
         return false;
+    INIT_LIST_HEAD(&new_node->list);
     // 分配足夠的記憶體來容納字串 s，包括結尾的空字符 '\0'
-    new_node->value = malloc(strlen(s) + 1);
-    if (!new_node->value) {
+    char *new_char = malloc((strlen(s) + 1) * sizeof(char));
+    if (!new_char) {
         free(new_node);
         return false;
     }
     // 複製字串 s 的內容到新分配的記憶體中
-    strncpy(new_node->value, s, strlen(s));
-
-    INIT_LIST_HEAD(&new_node->list);
+    strncpy(new_char, s, strlen(s));
+    new_char[strlen(s)] = '\0';
+    new_node->value = new_char;
     list_add(&new_node->list, head);
-
     return true;
 }
 
@@ -61,25 +63,27 @@ bool q_insert_head(struct list_head *head, char *s)
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
-    if (!head)
+    if (!head || !s)
         return false;
     element_t *new_node = malloc(sizeof(element_t));
     if (!new_node)
         return false;
+    INIT_LIST_HEAD(&new_node->list);
     // 分配足夠的記憶體來容納字串 s，包括結尾的空字符 '\0'
-    new_node->value = malloc(strlen(s) + 1);
-    if (!new_node->value) {
+    size_t len = strlen(s);
+    char *new_char = malloc((len + 1) * sizeof(char));
+    if (!new_char) {
         free(new_node);
         return false;
     }
     // 複製字串 s 的內容到新分配的記憶體中
-    strncpy(new_node->value, s, strlen(s));
-
-    INIT_LIST_HEAD(&new_node->list);
+    strncpy(new_char, s, len);
+    new_char[len] = '\0';  // 確保結尾為 '\0'
+    new_node->value = new_char;
     list_add_tail(&new_node->list, head);
-
     return true;
 }
+
 
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
@@ -198,7 +202,7 @@ void q_reverseK(struct list_head *head, int k)
 {
     // https://leetcode.com/problems/reverse-nodes-in-k-group/
     if (!head || list_empty(head))
-        return ' ';
+        return;
 
     struct list_head *curr;
     struct list_head *safe;
@@ -216,6 +220,7 @@ void q_reverseK(struct list_head *head, int k)
             begin = safe->prev;
         }
     }
+    return;
 }
 
 /* Sort elements of queue in ascending/descending order */
