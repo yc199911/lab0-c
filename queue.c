@@ -179,10 +179,12 @@ void q_swap(struct list_head *head)
     // https://leetcode.com/problems/swap-nodes-in-pairs/
     if (!head || list_empty(head))
         return;
-
-    struct list_head *curr = head->next;
-    for (; curr->next != head; curr = curr->next)
-        list_move(curr, curr->next);
+    struct list_head *first;
+    struct list_head *second;
+    list_for_each_safe (first, second, head)
+        if (first == second)
+            break;
+    list_move(second, first);
 }
 
 /* Reverse elements in queue */
@@ -193,9 +195,12 @@ void q_reverse(struct list_head *head)
     struct list_head *node;
     struct list_head *safe;
     list_for_each_safe (node, safe, head) {
-        list_del(node);
-        list_add(safe, head);
+        node->next = node->prev;
+        node->prev = safe;
     }
+    node->next = node->prev;
+    node->prev = safe;
+    return;
 }
 /* Reverse the nodes of the list k at a time */
 void q_reverseK(struct list_head *head, int k)
