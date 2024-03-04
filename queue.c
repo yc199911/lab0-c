@@ -134,19 +134,17 @@ bool q_delete_mid(struct list_head *head)
     if (!head || !head->next)
         return false;
 
-    struct list_head *slow = head;
-    struct list_head *fast = head;
-    struct list_head *prev = NULL;
+    struct list_head *slow = head->next;
+    struct list_head *fast = head->next;
 
-    while (fast && fast->next) {
-        prev = slow;
+    while (fast->next != head && fast != head) {
         slow = slow->next;
         fast = fast->next->next;
     }
-
-    prev->next = slow->next;
-    free(slow);
-    return head;
+    list_del(slow);
+    element_t *del = list_entry(slow, element_t, list);
+    q_release_element(del);
+    return true;
 }
 
 /* Delete all nodes that have duplicate string */
@@ -176,15 +174,17 @@ bool q_delete_dup(struct list_head *head)
 /* Swap every two adjacent nodes */
 void q_swap(struct list_head *head)
 {
-    // https://leetcode.com/problems/swap-nodes-in-pairs/
     if (!head || list_empty(head))
         return;
     struct list_head *first;
     struct list_head *second;
-    list_for_each_safe (first, second, head)
-        if (first == second)
+    list_for_each_safe (first, second, head) {
+        if (first == head || second == head)
             break;
-    list_move(second, first);
+        list_move(second, first);
+        second = first->next->next;
+        first = first->next;
+    }
 }
 
 /* Reverse elements in queue */
@@ -228,7 +228,7 @@ void q_reverseK(struct list_head *head, int k)
     return;
 }
 
-void MERGE_TWO_LISTS(struct list_head *L1, struct list_head *L2)
+void mergeTwoLists(struct list_head *L1, struct list_head *L2)
 {
     if (!L1 || !L2)
         return;
@@ -251,27 +251,17 @@ void q_sort(struct list_head *head, bool descend)
 {
     if (!head || list_empty(head) || list_is_singular(head))
         return;
-    element_t *second;
-    struct list_head l2;
+    struct list_head *slow = head->next;
+    for (struct list_head *fast = head->next;
+         fast != head && (fast->next) != head; fast = fast->next->next)
+        slow = slow->next;
+    struct list_head *mid = slow;
+    LIST_HEAD(right);
+    list_cut_position(&right, head, mid->prev);
 
-    INIT_LIST_HEAD(&l2);
-    struct list_head *curr, *next;
-    list_for_each_safe (curr, next, head) {
-        curr = curr->next;
-        if (curr) {
-            second = list_entry(curr, element_t, list);
-            curr = curr->next;
-        } else {
-            second = NULL;
-        }
-        if (second)
-            list_del(&second->list);
-        if (second)
-            list_add_tail(&second->list, &l2);
-    }
-    q_sort(head, descend);
-    q_sort(&l2, descend);
-    MERGE_TWO_LISTS(head, &l2);
+    q_sort(head, 1);
+    q_sort(&right, 1);
+    mergeTwoLists(head, &right);
 }
 
 
@@ -319,7 +309,7 @@ int q_merge(struct list_head *head, bool descend)
     for (struct list_head *curr = head->next->next; curr != head;
          curr = curr->next) {
         queue_contex_t *queue = list_entry(curr, queue_contex_t, chain);
-        MERGE_TWO_LISTS(queue_head->q, queue->q);
+        mergeTwoLists(queue_head->q, queue->q);
         INIT_LIST_HEAD(queue->q);
         queue->size = 0;
     }
