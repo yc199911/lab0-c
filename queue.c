@@ -228,8 +228,53 @@ void q_reverseK(struct list_head *head, int k)
     return;
 }
 
-/* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void MERGE_TWO_LISTS(struct list_head *L1, struct list_head *L2)
+{
+    if (!L1 || !L2)
+        return;
+    struct list_head *Lnode = L1->next, *Rnode = L2->next;
+    while (Lnode != L1 && Rnode != L2) {
+        if (strcmp(list_entry(Lnode, element_t, list)->value,
+                   list_entry(Rnode, element_t, list)->value) < 0) {
+            Lnode = Lnode->next;
+        } else {
+            list_move(Rnode, Lnode->prev);
+            Rnode = Rnode->next;
+        }
+    }
+    if (q_size(L2) != 0) {
+        list_splice_tail(L2, L1);
+    }
+}
+/* Sort elements of queue in ascending order */
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+    element_t *second;
+    struct list_head l2;
+
+    INIT_LIST_HEAD(&l2);
+    struct list_head *curr, *next;
+    list_for_each_safe (curr, next, head) {
+        curr = curr->next;
+        if (curr) {
+            second = list_entry(curr, element_t, list);
+            curr = curr->next;
+        } else {
+            second = NULL;
+        }
+        if (second)
+            list_del(&second->list);
+        if (second)
+            list_add_tail(&second->list, &l2);
+    }
+    q_sort(head, descend);
+    q_sort(&l2, descend);
+    MERGE_TWO_LISTS(head, &l2);
+}
+
+
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
@@ -246,6 +291,7 @@ int q_ascend(struct list_head *head)
     }
     return q_size(head);
 }
+
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
@@ -267,6 +313,15 @@ int q_descend(struct list_head *head)
  * order */
 int q_merge(struct list_head *head, bool descend)
 {
-    // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    if (!head)
+        return 0;
+    queue_contex_t *queue_head = list_entry(head->next, queue_contex_t, chain);
+    for (struct list_head *curr = head->next->next; curr != head;
+         curr = curr->next) {
+        queue_contex_t *queue = list_entry(curr, queue_contex_t, chain);
+        MERGE_TWO_LISTS(queue_head->q, queue->q);
+        INIT_LIST_HEAD(queue->q);
+        queue->size = 0;
+    }
+    return queue_head->size;
 }
