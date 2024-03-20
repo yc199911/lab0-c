@@ -179,9 +179,15 @@ void q_swap(struct list_head *head)
     struct list_head *first;
     struct list_head *second;
     list_for_each_safe (first, second, head) {
-        if (first == head || second == head)
+        if (second == head)
             break;
-        list_move(second, first);
+        first->prev->next = second;
+        second->prev = first->prev;
+        first->next = second->next;
+        first->prev = second;
+        second->next->prev = first;
+        second->next = first;
+        second = first->next;
     }
 }
 
