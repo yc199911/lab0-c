@@ -231,13 +231,13 @@ void mergeTwoLists(struct list_head *L1, struct list_head *L2)
     if (!L1 || !L2)
         return;
     struct list_head *Lnode = L1->next, *Rnode = L2->next;
-    while (Lnode != L1->next && Rnode != L2->next) {
+    while (Lnode != L1 && Rnode != L2) {
         if (strcmp(list_entry(Lnode, element_t, list)->value,
                    list_entry(Rnode, element_t, list)->value) < 0) {
             Lnode = Lnode->next;
         } else {
-            list_move(Rnode, Lnode->prev);
             Rnode = Rnode->next;
+            list_move(Rnode->prev, Lnode->prev);
         }
     }
     if (q_size(L2) != 0) {
