@@ -182,8 +182,6 @@ void q_swap(struct list_head *head)
         if (first == head || second == head)
             break;
         list_move(second, first);
-        second = first->next->next;
-        first = first->next;
     }
 }
 
@@ -233,7 +231,7 @@ void mergeTwoLists(struct list_head *L1, struct list_head *L2)
     if (!L1 || !L2)
         return;
     struct list_head *Lnode = L1->next, *Rnode = L2->next;
-    while (Lnode != L1 && Rnode != L2) {
+    while (Lnode != L1->next && Rnode != L2->next) {
         if (strcmp(list_entry(Lnode, element_t, list)->value,
                    list_entry(Rnode, element_t, list)->value) < 0) {
             Lnode = Lnode->next;
