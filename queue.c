@@ -183,9 +183,9 @@ void q_swap(struct list_head *head)
             break;
         first->prev->next = second;
         second->prev = first->prev;
+        second->next->prev = first;
         first->next = second->next;
         first->prev = second;
-        second->next->prev = first;
         second->next = first;
         second = first->next;
     }
@@ -277,12 +277,18 @@ int q_ascend(struct list_head *head)
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
     if (!head || list_empty(head))
         return 0;
-    element_t *first;
-    element_t *second;
-    list_for_each_entry_safe (first, second, head, list) {
-        if (second->value > first->value)
-            list_del(&first->list);
+
+    q_reverse(head);
+    element_t *min, *safe, *tmp;
+    min = list_entry(head->next, element_t, list);
+    list_for_each_entry_safe (tmp, safe, head, list) {
+        if (strcmp(min->value, tmp->value) < 0) {
+            list_del(&tmp->list);
+            q_release_element(tmp);
+        } else
+            min = tmp;
     }
+    q_reverse(head);
     return q_size(head);
 }
 
@@ -292,16 +298,37 @@ int q_ascend(struct list_head *head)
 int q_descend(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
+
     if (!head || list_empty(head))
         return 0;
-    element_t *first;
-    element_t *second;
-    list_for_each_entry_safe (first, second, head, list) {
-        if (second->value < first->value)
-            list_del(&first->list);
+
+    q_reverse(head);
+    element_t *max, *safe, *tmp;
+    max = list_entry(head->next, element_t, list);
+    list_for_each_entry_safe (tmp, safe, head, list) {
+        if (strcmp(max->value, tmp->value) > 0) {
+            list_del(&tmp->list);
+            q_release_element(tmp);
+        } else
+            max = tmp;
     }
+    q_reverse(head);
     return q_size(head);
 }
+// }
+// for (tmp = max; &tmp->list != head; tmp = safe) {
+//     safe = list_entry(tmp->list.next, element_t, list);
+//     if (strcmp(tmp->value, safe->value) < 0) {
+//         if (strcmp(max->value, safe->value) < 0) {
+//             list_del(&max->list);
+//             q_release_element(max);
+//             max = safe;
+//         }
+//         list_del(&tmp->list);
+//         q_release_element(tmp);
+//     }
+// }
+// return q_size(head);
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
  * order */

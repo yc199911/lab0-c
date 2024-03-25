@@ -54,7 +54,7 @@ qtest: $(OBJS)
 	$(Q)$(CC) -o $@ $(CFLAGS) -c -MMD -MF .$@.d $<
 
 check: qtest
-	./$< -v 3 -f traces/trace-04-ops.cmd
+	./$< -v 3 -f traces/trace-06-ops.cmd
 
 test: qtest scripts/driver.py
 	scripts/driver.py -c
