@@ -21,6 +21,7 @@
 
 #include "dudect/fixture.h"
 #include "list.h"
+#include "list_sort.h"
 #include "random.h"
 
 /* Shannon entropy */
@@ -74,6 +75,8 @@ static int fail_count = 0;
 static int string_length = MAXSTRING;
 
 static int descend = 0;
+
+static int use_list_sort = 0;
 
 #define MIN_RANDSTR_LEN 5
 #define MAX_RANDSTR_LEN 10
@@ -579,6 +582,14 @@ static bool do_size(int argc, char *argv[])
     return ok && !error_check();
 }
 
+static int cmp(void *priv,
+               const struct list_head *l1,
+               const struct list_head *l2)
+{
+    return strcmp(list_entry(l1, element_t, list)->value,
+                  list_entry(l2, element_t, list)->value);
+}
+
 bool do_sort(int argc, char *argv[])
 {
     if (argc != 1) {
@@ -599,7 +610,8 @@ bool do_sort(int argc, char *argv[])
 
     set_noallocate_mode(true);
     if (current && exception_setup(true))
-        q_sort(current->q, descend);
+        use_list_sort ? list_sort(NULL, current->q, cmp)
+                      : q_sort(current->q, descend);
     exception_cancel();
     set_noallocate_mode(false);
 
@@ -607,18 +619,13 @@ bool do_sort(int argc, char *argv[])
     if (current && current->size) {
         for (struct list_head *cur_l = current->q->next;
              cur_l != current->q && --cnt; cur_l = cur_l->next) {
-            /* Ensure each element in ascending/descending order */
+            /* Ensure each element in ascending order */
+            /* FIXME: add an option to specify sorting order */
             element_t *item, *next_item;
             item = list_entry(cur_l, element_t, list);
             next_item = list_entry(cur_l->next, element_t, list);
-            if (!descend && strcmp(item->value, next_item->value) > 0) {
+            if (strcmp(item->value, next_item->value) > 0) {
                 report(1, "ERROR: Not sorted in ascending order");
-                ok = false;
-                break;
-            }
-
-            if (descend && strcmp(item->value, next_item->value) < 0) {
-                report(1, "ERROR: Not sorted in descending order");
                 ok = false;
                 break;
             }
@@ -628,6 +635,7 @@ bool do_sort(int argc, char *argv[])
     q_show(3);
     return ok && !error_check();
 }
+
 
 static bool do_dm(int argc, char *argv[])
 {
@@ -1060,6 +1068,8 @@ static void console_init()
               "Number of times allow queue operations to return false", NULL);
     add_param("descend", &descend,
               "Sort and merge queue in ascending/descending order", NULL);
+    add_param("listsort", &use_list_sort,
+              "Use the sort which is made by linux kernel developers", NULL);
 }
 
 /* Signal handlers */
